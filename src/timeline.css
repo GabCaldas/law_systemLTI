@@ -1,0 +1,93 @@
+/* timeline.css */
+.timeline {
+  --timeline-color: white;
+  position: relative;
+  list-style: none;
+  display: flex;
+  flex-wrap: nowrap;
+  margin: 0;
+  padding: 0;
+  height: 230px;
+}
+
+.timeline:before {
+  content: "";
+  position: absolute;
+  top: calc(50% - 1px);
+  width: 100%;
+  height: 2px;
+  background: #7b9d6f;
+}
+
+.timeline li {
+  border: 1px black solid;
+  color: black;
+  background: #fff;
+  margin: 0;
+  display: flex;
+  align-self: flex-start;
+  border-radius: 10px;
+  transition: transform 0.2s ease;
+  cursor: pointer;
+}
+
+.timeline li:not(:last-child) {
+  margin: 0 -50px 0 0;
+}
+
+.timeline li:nth-child(2n),
+.timeline li:nth-child(2n) div {
+  align-self: flex-end;
+}
+
+.timeline div {
+  position: relative;
+  width: 200px;
+  padding: 5px;
+}
+
+.timeline li:before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  margin-left: 100px;
+  transform: translate(-50%, -50%);
+  border: 1px #7b9d6f solid;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #7b9d6f;
+  cursor: pointer;
+}
+
+.timeline div:before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  transform: translate(-50%, -1px) rotateZ(45deg);
+  background: #fff;
+}
+
+.timeline li:nth-child(2n - 1) div:before {
+  top: 100%;
+  margin-top: -8px;
+  border-right: 1px #7b9d6f solid;
+  border-bottom: 1px #7b9d6f solid;
+}
+
+.timeline .unidOrc {
+  color: black;
+}
+
+.timeline .tempo {
+  color: black;
+}
+
+.timeline li:before :hover {
+  transform: scale(
+    1.05
+  ); /* NOVO: Aplica o efeito de hover somente no container (div) */
+}
