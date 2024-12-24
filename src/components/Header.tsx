@@ -1,5 +1,8 @@
+import { signOut } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
 import database from "../../public/database.json";
-// Header Component
+import { auth } from "../auth/firebase"; // Acesse o objeto auth do Firebase.
+
 const Header = ({ 
   prefeitura, 
   setPrefeitura, 
@@ -11,6 +14,18 @@ const Header = ({
   itemsPerPage, 
   setItemsPerPage
 }) => {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    signOut(auth)
+      .then(() => {
+        navigate("/login");
+      })
+      .catch((error) => {
+        console.error("Erro ao deslogar:", error);
+      });
+  };
+
   return (
     <header className="w-full bg-midnightGreen text-white p-4 flex justify-center">
       <div className="flex gap-4 items-center max-w-5xl w-full">
@@ -65,6 +80,12 @@ const Header = ({
           <option value={100}>100 Itens</option>
         </select>
       </div>
+      <button
+        className="px-5 py-1 ml-5 bg-red-500 text-white rounded hover:bg-red-600"
+        onClick={handleLogout}
+      >
+        Logout
+      </button>
     </header>
   );
 };
