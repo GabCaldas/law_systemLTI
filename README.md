@@ -23,6 +23,10 @@ O projeto utiliza o Firebase para autenticação e armazenamento de dados. As co
 - **Firestore**: Para armazenamento de dados.
 - **Auth**: Para autenticação de usuários.
 
+![Screenshot from 2025-01-19 16-09-14](https://github.com/user-attachments/assets/102d07b8-9de0-4cff-89e8-45acf8dab83f)
+![Screenshot from 2025-01-19 16-08-37](https://github.com/user-attachments/assets/f9c62968-5cd1-46f9-a17c-46f7f6f629de)
+
+
 ### Atualização de Status no Firestore
 A função `updateFirestoreOnStatusChange` atualiza o status de uma pessoa no Firestore, registrando também o usuário que realizou a mudança e a data/hora.
 
@@ -72,3 +76,12 @@ A rota principal é protegida pelo componente `ProtectedRoute`, que verifica se 
 Os componentes `Register` e `Login` implementam cadastro e autenticação de usuários utilizando o Firebase Auth.
 
 ---
+# Tenologias usadas
+React
+TailwindCSS
+Firebase
+Toastify
+---
+## Para rodar a aplicação
+npm install
+npm run dev
