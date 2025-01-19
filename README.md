@@ -83,5 +83,5 @@ Firebase
 Toastify
 ---
 ## Para rodar a aplicação
-npm install
+npm install > 
 npm run dev
