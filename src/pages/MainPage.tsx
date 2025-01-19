@@ -1,11 +1,11 @@
-// pages/MainPage.jsx
+// Importações necessárias para inicializar o Firebase, manipular autenticação, banco de dados, e outros componentes.
 import { initializeApp } from "firebase/app";
-import { onAuthStateChanged } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 import { collection, doc, getDoc, getFirestore, onSnapshot, setDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "react-toastify/dist/ReactToastify.css";
 import database from "../../public/database.json";
-import { auth } from "../auth/firebase.js";
 import Header from "../components/Header";
 import { Pagination } from "../components/Pagination";
 import { PersonCard } from "../components/PersonCard";
@@ -13,6 +13,7 @@ import { ProcessPopup } from "../components/PopUp";
 import { Timeline } from "../components/Timeline";
 import "../timeline.css";
 
+// Configuração do Firebase.
 const firebaseConfig = {
   apiKey: "AIzaSyA2sa3XQcZcrdYO5FbZOAR7agHsi9YyisY",
   authDomain: "law-system-5ecbc.firebaseapp.com",
@@ -22,65 +23,63 @@ const firebaseConfig = {
   appId: "1:33639626350:web:d77fc5ac8320695608187f"
 };
 
+// Inicialização do Firebase e serviços necessários.
 const firebaseApp = initializeApp(firebaseConfig);
 const firestore = getFirestore(firebaseApp);
+const auth = getAuth(firebaseApp);
 
+// Componente principal da página.
 const MainPage = () => {
-  const [prefeitura, setPrefeitura] = useState("");
-  const [pessoas, setPessoas] = useState({});
-  const [selectedPerson, setSelectedPerson] = useState("");
-  const [filteredProcessos, setFilteredProcessos] = useState({});
-  const [itemsPerPage, setItemsPerPage] = useState(20);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedProcess, setSelectedProcess] = useState(null);
-  const [statuses, setStatuses] = useState({});
+  // Estados para armazenar dados e gerenciar interações.
+  const [prefeitura, setPrefeitura] = useState(""); // Cidade atual selecionada.
+  const [pessoas, setPessoas] = useState({}); // Dados das pessoas da cidade.
+  const [selectedPerson, setSelectedPerson] = useState(""); // Pessoa selecionada.
+  const [filteredProcessos, setFilteredProcessos] = useState({}); // Processos filtrados.
+  const [itemsPerPage, setItemsPerPage] = useState(20); // Itens por página para paginação.
+  const [currentPage, setCurrentPage] = useState(1); // Página atual.
+  const [searchTerm, setSearchTerm] = useState(""); // Termo de busca.
+  const [selectedProcess, setSelectedProcess] = useState(null); // Processo selecionado para exibição.
+  const [statuses, setStatuses] = useState({}); // Status de cada pessoa.
 
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // Navegação entre páginas.
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        // Redireciona para a página de login se não estiver autenticado
-        navigate("/login");
-      }
-    });
-
-    return () => unsubscribe();
-  }, [navigate]);
-
-
-  // Firebase functions...
-  const updateStatusInFirestore = async (cidade, personKey, newStatus) => {
+  // Função para atualizar o Firestore quando o status de uma pessoa é alterado.
+  const updateFirestoreOnStatusChange = async (city, personKey, personData, newStatus) => {
     try {
-      // Verifica se o status é válido
-      if (!newStatus) {
-        console.error("Status inválido:", newStatus);
-        newStatus = "Não contactado";  // Define o status padrão
+      const currentUser = auth.currentUser; // Usuário autenticado.
+      if (!currentUser) {
+        console.error("Nenhum usuário logado");
+        return;
       }
-  
-      // A coleção será nomeada com a cidade, e o documento será o nome da pessoa
-      const statusRef = doc(firestore, cidade, personKey);  // Usando a cidade como nome da coleção e o nome da pessoa como documento
-      await setDoc(statusRef, {
-        status: newStatus,
-        updatedAt: new Date().toISOString(),
-        prefeitura: cidade
-      });
-      console.log("Status atualizado com sucesso no Firestore");
+
+      const documentData = {
+        Nome: personKey,
+        Cidade: city,
+        Cpf: personData.cpf || "",
+        Status: newStatus,
+        "Atualizado por": currentUser.email,
+        "Data da atualização": new Date().toLocaleString('pt-BR')
+      };
+
+      const personRef = doc(firestore, city, personKey);
+      await setDoc(personRef, documentData, { merge: true }); // Atualização dos dados no Firestore.
+
+      console.log(`Status atualizado para ${personKey} na cidade ${city}. Novo status: ${newStatus}`);
     } catch (error) {
-      console.error("Erro ao atualizar status no Firestore:", error);
+      console.error(`Erro ao atualizar o Firestore para ${personKey} na cidade ${city}:`, error);
     }
   };
-  
+
+  // Hook para ouvir alterações no Firestore e atualizar os status em tempo real.
   useEffect(() => {
     if (!prefeitura) return;
-  
+
     const unsubscribe = onSnapshot(
-      collection(firestore, prefeitura),  // Escutando a coleção específica da cidade
+      collection(firestore, prefeitura),
       (snapshot) => {
         const updatedStatuses = {};
         snapshot.forEach(doc => {
-          updatedStatuses[doc.id] = doc.data().status || "Não contactado";  // Define "Não contactado" se o status não existir
+          updatedStatuses[doc.id] = doc.data().Status || ""; // Atualização do estado com novos status.
         });
         setStatuses(updatedStatuses);
       },
@@ -88,53 +87,54 @@ const MainPage = () => {
         console.error("Erro ao ouvir alterações no Firestore:", error);
       }
     );
-  
+
     return () => unsubscribe();
   }, [prefeitura]);
-  
-  
-  
+
+  // Busca o status de uma pessoa específica no Firestore.
   const fetchStatusFromFirestore = async (cidade, personKey) => {
     try {
-      const statusRef = doc(firestore, cidade, personKey);  // Agora a coleção é pela cidade e o documento é a pessoa
+      const statusRef = doc(firestore, cidade, personKey);
       const statusDoc = await getDoc(statusRef);
       if (statusDoc.exists()) {
-        return statusDoc.data().status || "Não contactado";  // Retorna "Não contactado" se não houver status
+        return statusDoc.data().Status || "";
       }
-      return "Não contactado";  // Retorna "Não contactado" caso o status não exista
+      return "";
     } catch (error) {
       console.error("Erro ao buscar status do Firestore:", error);
-      return "Não contactado";  // Se ocorrer erro, retorna "Não contactado"
+      return "";
     }
   };
-  
 
+  // Função para manipular a mudança de status.
   const handleStatusChange = async (personKey, newStatus) => {
-    setStatuses(prev => ({
-      ...prev,
-      [personKey]: newStatus
-    }));
-    await updateStatusInFirestore(prefeitura, personKey, newStatus); // Passando o nome da cidade
-  };
-  
+    const personData = pessoas[personKey];
 
-  // Effects...
+    setStatuses((prev) => ({
+      ...prev,
+      [personKey]: newStatus,
+    }));
+
+    await updateFirestoreOnStatusChange(prefeitura, personKey, personData, newStatus);
+  };
+
+  // Hook para buscar todos os status no Firestore ao carregar os dados de pessoas.
   useEffect(() => {
     const fetchAllStatuses = async () => {
       const newStatuses = {};
       for (const personKey of Object.keys(pessoas)) {
-        const status = await fetchStatusFromFirestore(prefeitura, personKey); // Passando o nome da cidade
+        const status = await fetchStatusFromFirestore(prefeitura, personKey);
         newStatuses[personKey] = status;
       }
       setStatuses(newStatuses);
     };
-  
+
     if (Object.keys(pessoas).length > 0 && prefeitura) {
       fetchAllStatuses();
     }
   }, [pessoas, prefeitura]);
-  
 
+  // Hook para carregar dados JSON baseados na cidade selecionada.
   useEffect(() => {
     if (prefeitura) {
       const fileName = database[prefeitura];
@@ -149,6 +149,7 @@ const MainPage = () => {
     }
   }, [prefeitura]);
 
+  // Hook para filtrar processos baseados no termo de busca.
   useEffect(() => {
     if (prefeitura) {
       const processos = {};
@@ -161,18 +162,21 @@ const MainPage = () => {
       });
 
       setFilteredProcessos(processos);
-      setCurrentPage(1);
+      setCurrentPage(1); // Reinicia a paginação ao buscar.
     }
   }, [pessoas, prefeitura, searchTerm]);
 
+  // Retorna os itens paginados.
   const getPagedPeople = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return Object.keys(filteredProcessos).slice(startIndex, endIndex);
   };
 
+  // Obtém o ano atual.
   const getCurrentYear = () => new Date().getFullYear();
-  
+
+  // Gera os anos a serem exibidos para uma pessoa com base em seus dados.
   const getDisplayedYears = (personData) => {
     const currentYear = getCurrentYear();
     const allYears = Array.from(
@@ -190,6 +194,7 @@ const MainPage = () => {
     }, {});
   };
 
+  // Renderização do componente principal.
   return (
     <div className="flex flex-col min-h-screen bg-darkWhite">
       <Header
@@ -203,7 +208,7 @@ const MainPage = () => {
         itemsPerPage={itemsPerPage}
         setItemsPerPage={setItemsPerPage}
       />
-      
+
       <main className={`flex ${selectedPerson ? "justify-center" : "flex-wrap"} gap-8 items-start mt-6 w-full max-w-7xl mx-auto flex-1`}>
         {(selectedPerson ? [selectedPerson] : getPagedPeople()).map((personKey) => {
           const personData = pessoas[personKey];

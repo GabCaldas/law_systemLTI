@@ -1,25 +1,33 @@
 import { signOut } from "firebase/auth";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import database from "../../public/database.json";
-import { auth } from "../auth/firebase"; // Acesse o objeto auth do Firebase.
+import { auth } from "../auth/firebase";
 
-const Header = ({ 
-  prefeitura, 
-  setPrefeitura, 
-  pessoas, 
-  selectedPerson, 
-  setSelectedPerson, 
-  searchTerm, 
-  setSearchTerm, 
-  itemsPerPage, 
+const Header = ({
+  prefeitura,
+  setPrefeitura,
+  pessoas,
+  selectedPerson,
+  setSelectedPerson,
+  searchTerm,
+  setSearchTerm,
+  itemsPerPage,
   setItemsPerPage
 }) => {
   const navigate = useNavigate();
 
+  // Set default municipality on component mount
+  useEffect(() => {
+    if (!prefeitura) {
+      setPrefeitura("Alagoa Grande");
+    }
+  }, [prefeitura, setPrefeitura]);
+
   const handleLogout = () => {
     signOut(auth)
       .then(() => {
-        navigate("/login");
+        navigate("/");
       })
       .catch((error) => {
         console.error("Erro ao deslogar:", error);
@@ -31,7 +39,7 @@ const Header = ({
       <div className="flex gap-4 items-center max-w-5xl w-full">
         <select
           className="flex-1 p-2 rounded bg-white text-gray-700"
-          value={prefeitura}
+          value={prefeitura || "Alagoa Grande"}
           onChange={(e) => {
             setPrefeitura(e.target.value);
             setSelectedPerson("");
@@ -89,6 +97,5 @@ const Header = ({
     </header>
   );
 };
-
 
 export default Header;
