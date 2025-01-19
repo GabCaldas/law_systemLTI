@@ -72,14 +72,3 @@ A rota principal é protegida pelo componente `ProtectedRoute`, que verifica se 
 Os componentes `Register` e `Login` implementam cadastro e autenticação de usuários utilizando o Firebase Auth.
 
 ---
-
-## Comentários no Código
-**MainPage.jsx**: Foram adicionados comentários ao código original para facilitar o entendimento das funções e lógica de negócios.
-
-**Exemplo de Comentário:**
-// Atualiza os estados quando o usuário seleciona uma nova prefeitura.
-
----
-
-## Conclusão
-Este guia serve como base para novos desenvolvedores entenderem a lógica do projeto e como ele interage com o Firebase. Qualquer dúvida ou melhoria pode ser encaminhada ao time responsável.
